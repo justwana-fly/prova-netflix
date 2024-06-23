@@ -11,40 +11,43 @@ class TmdbService
 
     public function __construct()
     {
-        // Crea un'istanza del client Guzzle per effettuare richieste HTTP
         $this->client = new Client([
-            'verify' => false,  // Disabilita la verifica del certificato SSL
+            'verify' => false,
         ]);
-        // Recupera la chiave API da variabili di ambiente
         $this->apiKey = env('TMDB_API_KEY');
     }
 
-    // Metodo per ottenere i film popolari
     public function getPopularMovies()
     {
-        // Effettua una richiesta GET all'endpoint "movie/popular" di TMDb
         $response = $this->client->get('https://api.themoviedb.org/3/movie/popular', [
             'query' => [
-                'api_key' => $this->apiKey
+                'api_key' => $this->apiKey,
+                'append_to_response' => 'videos,credits'
             ]
         ]);
 
-        // Decodifica la risposta JSON in un array associativo PHP
-        return json_decode($response->getBody(), true);
+        $data = json_decode($response->getBody(), true);
+        foreach ($data['results'] as &$movie) {
+            // Aggiungi un URL del video completo per esempio
+            $movie['full_video_url'] = 'https://www.example.com/path/to/full/movie.mp4';
+        }
+
+        return $data;
     }
 
-    // Metodo per cercare film
-    public function searchMovies($query)
+    public function getMovieDetails($movieId)
     {
-        // Effettua una richiesta GET all'endpoint "search/movie" di TMDb con il parametro di ricerca
-        $response = $this->client->get('https://api.themoviedb.org/3/search/movie', [
+        $response = $this->client->get("https://api.themoviedb.org/3/movie/{$movieId}", [
             'query' => [
                 'api_key' => $this->apiKey,
-                'query' => $query
+                'append_to_response' => 'videos,credits'
             ]
         ]);
 
-        // Decodifica la risposta JSON in un array associativo PHP
-        return json_decode($response->getBody(), true);
+        $data = json_decode($response->getBody(), true);
+        // Aggiungi un URL del video completo per esempio
+        $data['full_video_url'] = 'https://www.example.com/path/to/full/movie.mp4';
+
+        return $data;
     }
 }

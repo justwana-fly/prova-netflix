@@ -5,51 +5,66 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-black dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <!-- Contenuto della pagina dei film popolari -->
+    <div class="py-0">
+        <div class="max-w-full mx-auto sm:px-0 lg:px-0">
+            <div class="bg-black dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-none">
+                <div class="text-gray-900 dark:text-gray-100" style="padding:0;">
+                    @if(!empty($movies))
+                        <div class="jumbotron text-white bg-dark position-relative" style="padding:0;">
+                            @foreach($movies as $index => $movie)
+                                @php
+                                    $videoKey = '';
+
+                                    if (isset($movie['videos']['results']) && !empty($movie['videos']['results'])) {
+                                        foreach($movie['videos']['results'] as $video) {
+                                            if($video['type'] == 'Trailer') {
+                                                $videoKey = $video['key'];
+                                                break;
+                                            }
+                                        }
+                                    }
+                                @endphp
+                                @if($videoKey)
+                                    <iframe class="movie-trailer"
+                                            src="https://www.youtube.com/embed/{{ $videoKey }}?enablejsapi=1&controls=0&showinfo=0&modestbranding=1&rel=0&autoplay=1&mute=0"
+                                            frameborder="0"
+                                            allowfullscreen
+                                            style="display:none;"
+                                            data-title="{{ $movie['title'] }}"
+                                            data-url="{{ route('movies.show', $movie['id']) }}">
+                                    </iframe>
+                                @endif
+                            @endforeach
+                            <p id="no-trailer" class="text-center" style="display: none;">Nessun trailer disponibile</p>
+                            <button class="arrow arrow-left" onclick="prevTrailer()">&#9664;</button>
+                            <button class="arrow arrow-right" onclick="nextTrailer()">&#9654;</button>
+                            <div class="movie-info" id="movie-info">
+                                <h1 id="movie-title"></h1>
+                                <a href="#" id="movie-link">View Details</a>
+                            </div>
+                        </div>
+                        <div class="volume-control text-white text-center mt-2">
+                            <label for="volume">Volume:</label>
+                            <input type="range" id="volume" name="volume" min="0" max="100" value="100">
+                        </div>
+                    @endif
+
                     <h1>Popular Movies</h1>
                     <form action="{{ route('movies.search') }}" method="GET" class="mb-4">
                         <input type="text" name="query" placeholder="Search for a movie" class="p-2 border rounded">
                         <button type="submit" class="p-2 bg-blue-500 text-white rounded">Search</button>
                     </form>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div class="row">
                         @foreach($movies as $movie)
-                            <div class="col-span-1 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transform transition duration-500 hover:scale-105 cursor-pointer" onclick="showDetails('{{ $movie['id'] }}')">
-                                <img src="https://image.tmdb.org/t/p/w500/{{ $movie['poster_path'] }}" class="h-70 w-full object-cover" alt="{{ $movie['title'] }}">
-                                <div class="p-4 ">
-                                    <h5 class="text-lg font-bold">{{ $movie['title'] }}</h5>
-                                    <p class="text-gray-700 dark:text-gray-300">{{ Str::limit($movie['overview'], 100) }}</p>
-                                    <button class="mt-2 inline-block bg-blue-500 text-white px-4 py-2 rounded">View Details</button>
-                                </div>
-                            </div>
-
-                            <!-- Modal per mostrare i dettagli del film -->
-                            <div id="modal-{{ $movie['id'] }}" class="fixed z-50 inset-0 hidden overflow-y-auto">
-                                <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
-                                    <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                                        <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                            <div class="col-md-3 mb-4">
+                                <div class="card bg-dark text-white h-100">
+                                    <img src="https://image.tmdb.org/t/p/w500/{{ $movie['poster_path'] }}" class="card-img-top" alt="{{ $movie['title'] }}">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ $movie['title'] }}</h5>
+                                        <p class="card-text">{{ \Illuminate\Support\Str::limit($movie['overview'], 100) }}</p>
                                     </div>
-                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                                    <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-                                        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                            <div class="sm:flex sm:items-start">
-                                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100" id="modal-title">{{ $movie['title'] }}</h3>
-                                                    <div class="mt-2">
-                                                        <img src="https://image.tmdb.org/t/p/w500/{{ $movie['poster_path'] }}" class="h-64 w-full object-contain" alt="{{ $movie['title'] }}">
-                                                        <p class="text-sm text-gray-700 dark:text-gray-300">{{ $movie['overview'] }}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                                            <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" onclick="closeModal('{{ $movie['id'] }}')">
-                                                Close
-                                            </button>
-                                        </div>
+                                    <div class="card-footer">
+                                        <a href="{{ route('movies.show', $movie['id']) }}" class="btn btn-primary">View Details</a>
                                     </div>
                                 </div>
                             </div>
@@ -61,12 +76,90 @@
     </div>
 
     <script>
-        function showDetails(id) {
-            document.getElementById('modal-' + id).classList.remove('hidden');
-        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var trailers = document.querySelectorAll('.movie-trailer');
+            var currentTrailer = 0;
+            var players = [];
+            var volumeControl = document.getElementById('volume');
+            var movieInfo = document.getElementById('movie-info');
+            var movieTitle = document.getElementById('movie-title');
+            var movieLink = document.getElementById('movie-link');
 
-        function closeModal(id) {
-            document.getElementById('modal-' + id).classList.add('hidden');
-        }
+            if (trailers.length === 0) {
+                document.getElementById('no-trailer').style.display = 'block';
+                return;
+            }
+
+            function stopAllTrailers() {
+                players.forEach(player => {
+                    player.stopVideo();
+                });
+            }
+
+            function playTrailer(index) {
+                stopAllTrailers();
+
+                trailers.forEach((trailer, i) => {
+                    trailer.style.display = i === index ? 'block' : 'none';
+                });
+
+                movieTitle.textContent = trailers[index].dataset.title;
+                movieLink.href = trailers[index].dataset.url;
+
+                if (!players[index]) {
+                    players[index] = new YT.Player(trailers[index], {
+                        events: {
+                            'onReady': onPlayerReady,
+                            'onStateChange': onPlayerStateChange
+                        }
+                    });
+                } else {
+                    players[index].playVideo();
+                }
+            }
+
+            function onPlayerReady(event) {
+                event.target.playVideo();
+                event.target.setVolume(volumeControl.value);
+            }
+
+            function onPlayerStateChange(event) {
+                if (event.data === YT.PlayerState.ENDED) {
+                    nextTrailer();
+                }
+            }
+
+            volumeControl.addEventListener('input', function () {
+                if (players[currentTrailer]) {
+                    players[currentTrailer].setVolume(volumeControl.value);
+                }
+            });
+
+            function nextTrailer() {
+                currentTrailer = (currentTrailer + 1) % trailers.length;
+                playTrailer(currentTrailer);
+            }
+
+            function prevTrailer() {
+                currentTrailer = (currentTrailer - 1 + trailers.length) % trailers.length;
+                playTrailer(currentTrailer);
+            }
+
+            window.nextTrailer = nextTrailer;
+            window.prevTrailer = prevTrailer;
+
+            if (window.YT) {
+                playTrailer(currentTrailer);
+            } else {
+                var tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                var firstScriptTag = document.getElementsByTagName('script')[0];
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+                window.onYouTubeIframeAPIReady = function () {
+                    playTrailer(currentTrailer);
+                };
+            }
+        });
     </script>
 </x-app-layout>
